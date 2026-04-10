@@ -24,13 +24,47 @@
         }
         .preview-box {
             height: 70vh;
-            overflow: hidden;
+            overflow:hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(0,0,0,0.03);
             border-radius: 4px;
             padding: 20px;
+            position: relative;
+        }
+        .preview-divider {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            right: 20px;
+            height: 0;
+            border-top: 1px dashed rgba(61,61,61,0.25);
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preview-divider::before {
+            content: 'TOP — COLOR';
+            font-size: 8px;
+            letter-spacing: 2px;
+            color: rgba(61,61,61,0.35);
+            background: rgba(244,241,234,0.8);
+            padding: 2px 6px;
+            transform: translateY(-50%);
+            display: block;
+        }
+        .preview-divider::after {
+            content: 'BOTTOM — B/W';
+            font-size: 8px;
+            letter-spacing: 2px;
+            color: rgba(61,61,61,0.35);
+            background: rgba(244,241,234,0.8);
+            padding: 2px 6px;
+            transform: translateY(-50%);
+            display: block;
         }
         canvas {
             max-width: 100%;
@@ -52,6 +86,8 @@
             height: 1px;
             background: #d1ccbc;
             outline: none;
+            cursor: pointer;
+            touch-action: none;
         }
         .custom-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -60,6 +96,14 @@
             background: var(--ink);
             cursor: pointer;
             border-radius: 0;
+        }
+        .custom-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: var(--ink);
+            cursor: pointer;
+            border-radius: 0;
+            border: none;
         }
         .btn-ratio {
             border: 1px solid var(--ink);
@@ -95,7 +139,7 @@
     <div class="max-w-7xl mx-auto">
         <header class="mb-10 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left relative z-10">
             <div>
-                <h1 class="text-2xl uppercase tracking-widest font-bold">Wabi-Sabi Collage</h1>
+                <h1 class="text-2xl uppercase tracking-widest font-bold">Wabi.ooo</h1>
                 <p class="text-[10px] opacity-40 italic mt-1 font-sans text-stone-600">This website is a collage generator that create an expressive and imperfect aesthetic by combining images and applying aesthetic layouts.</p>
             </div>
             
@@ -202,12 +246,35 @@
                 <button id="exportBtn" class="w-full bg-stone-800 text-stone-100 py-4 font-bold tracking-[0.4em] text-[11px] hover:bg-black transition-all rounded shadow-xl uppercase">
                     Export Collage
                 </button>
+
+                <!-- Export Modal -->
+                <div id="exportModal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,0.75);">
+                    <div class="relative mx-4 max-w-lg w-full" style="background:#F4F1EA; border:1px solid rgba(0,0,0,0.15); border-radius:4px; padding:24px;">
+                        <button id="modalClose" class="absolute top-3 right-4 text-[18px] opacity-40 hover:opacity-80" style="font-family:monospace;">✕</button>
+                        <p class="text-[9px] uppercase tracking-[3px] opacity-40 mb-3">Your Collage</p>
+                        <img id="exportPreview" src="" alt="collage preview"
+                            style="width:100%; display:block; box-shadow:0 10px 30px rgba(0,0,0,0.2); border-radius:2px; -webkit-touch-callout:default;">
+                        <p class="text-[10px] text-center opacity-40 mt-2 tracking-widest">Your collage is ready.<br> Look for it in your device's downloads or long-press the preview to save to your photos.</p>
+                        <div class="mt-4 flex gap-3">
+                            <a id="modalDownload" download="" href=""
+                                class="flex-1 text-center bg-stone-800 text-stone-100 py-3 text-[10px] font-bold tracking-[0.3em] uppercase hover:bg-black transition-all rounded">
+                                Download
+                            </a>
+                            <button id="modalCloseBtn"
+                                class="flex-1 text-center border border-stone-400 py-3 text-[10px] tracking-[0.3em] uppercase hover:bg-stone-100 transition-all rounded">
+                                Close
+                            </button>
+                        </div>
+                        <p id="typewriterMsg" class="text-[9px] italic opacity-0 mt-4 text-center" style="min-height:1.4em; transition:opacity 0.4s;"></p>
+                    </div>
+                </div>
             </div>
 
             <!-- 預覽區 -->
             <div class="lg:col-span-7 order-1 lg:order-2">
                 <div class="preview-box">
                     <canvas id="mainCanvas"></canvas>
+                    <div class="preview-divider"></div>
                 </div>
                 <div class="mt-8 opacity-20 text-[9px] uppercase tracking-widest text-center flex justify-center gap-12">
                     <span>Handmade Logic</span>
@@ -246,7 +313,7 @@
             }
         };
 
-        window.onload = () => { setRatio(1); bindEvents(); };
+        window.onload = () => { setRatio(1); bindEvents(); setupTouchSliders(); };
 
         function setRatio(r) {
             state.ratio = r;
@@ -497,12 +564,86 @@
             }
         }
 
-        document.getElementById('exportBtn').onclick = () => {
-            const link = document.createElement('a');
-            link.download = `WABI-SABI-STAMP-COLLAGE.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        };
+        // 手機觸控靈敏度優化
+        function setupTouchSliders() {
+            document.querySelectorAll('.custom-slider').forEach(slider => {
+                slider.addEventListener('touchstart', onTouchSlider, { passive: false });
+                slider.addEventListener('touchmove', onTouchSlider, { passive: false });
+            });
+        }
+
+        function onTouchSlider(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const slider = e.currentTarget;
+            const rect = slider.getBoundingClientRect();
+            const min = parseFloat(slider.min) || 0;
+            const max = parseFloat(slider.max) || 100;
+            const step = parseFloat(slider.step) || 1;
+
+            let ratio = (touch.clientX - rect.left) / rect.width;
+            ratio = Math.max(0, Math.min(1, ratio));
+            let value = min + ratio * (max - min);
+            value = Math.round(value / step) * step;
+            value = Math.max(min, Math.min(max, value));
+
+            slider.value = value;
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        // Export — 彈出預覽視窗
+        const exportModal = document.getElementById('exportModal');
+        const exportPreview = document.getElementById('exportPreview');
+        const modalDownload = document.getElementById('modalDownload');
+        const typewriterMsg = document.getElementById('typewriterMsg');
+        let typewriterTimer = null;
+
+        function openExportModal() {
+            const dataURL = canvas.toDataURL('image/png');
+            const filename = `Wabi-Sabi-${Date.now()}.png`;
+
+            exportPreview.src = dataURL;
+            modalDownload.href = dataURL;
+            modalDownload.download = filename;
+
+            typewriterMsg.textContent = '';
+            typewriterMsg.style.opacity = '0';
+            clearTimeout(typewriterTimer);
+
+            exportModal.style.display = 'flex';
+            exportModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeExportModal() {
+            exportModal.style.display = 'none';
+            exportModal.classList.add('hidden');
+            document.body.style.overflow = '';
+            clearTimeout(typewriterTimer);
+        }
+
+        function typewrite(text) {
+            typewriterMsg.textContent = '';
+            typewriterMsg.style.opacity = '1';
+            let i = 0;
+            function tick() {
+                typewriterMsg.textContent += text[i];
+                i++;
+                if (i < text.length) typewriterTimer = setTimeout(tick, 38);
+            }
+            tick();
+        }
+
+        document.getElementById('exportBtn').onclick = openExportModal;
+        document.getElementById('modalClose').onclick = closeExportModal;
+        document.getElementById('modalCloseBtn').onclick = closeExportModal;
+        exportModal.addEventListener('click', (e) => { if (e.target === exportModal) closeExportModal(); });
+
+        modalDownload.addEventListener('click', () => {
+            setTimeout(() => {
+                typewrite("Your collage is ready. Look for it in your device's downloads or long-press the preview to save to your photos.");
+            }, 300);
+        });
     </script>
 </body>
 </html>
