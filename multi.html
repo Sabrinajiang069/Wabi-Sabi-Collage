@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wabi.ooo — Multi Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        :root { --paper: #F4F1EA; --ink: #3d3d3d; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Special Elite', 'Courier New', Courier, monospace;
+            background-color: var(--paper);
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            color: var(--ink);
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* ── ENTRY SCREEN ── */
+        #entryScreen {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh; padding: 40px 20px;
+        }
+        .entry-title { font-size: clamp(1.4rem, 4vw, 2.2rem); letter-spacing: .3em; text-transform: uppercase; text-align: center; }
+        .entry-sub { font-size: 10px; opacity: .4; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; text-align: center; font-family: sans-serif; }
+        .count-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 52px; width: 100%; max-width: 560px; }
+        .count-card {
+            border: 1px solid rgba(61,61,61,.25); padding: 28px 12px 22px;
+            cursor: pointer; text-align: center; transition: background .18s, border-color .18s; user-select: none;
+        }
+        .count-card:hover { background: rgba(61,61,61,.06); border-color: var(--ink); }
+        .count-card .num { font-size: 2.6rem; line-height: 1; }
+        .count-card .label { font-size: 9px; letter-spacing: 2px; opacity: .45; margin-top: 6px; }
+        .count-card .dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 14px; }
+        .count-card .dot { width: 14px; height: 14px; background: var(--ink); opacity: .18; border-radius: 0; }
+        .count-card .dot.active { opacity: .6; }
+
+        /* ── EDITOR SCREEN ── */
+        #editorScreen { display: none; }
+        .editor-header {
+            padding: 16px 24px; border-bottom: 1px solid rgba(61,61,61,.12);
+            display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+        }
+        .editor-header h1 { font-size: 13px; letter-spacing: .35em; text-transform: uppercase; margin: 0; }
+        .count-switcher { display: flex; gap: 6px; align-items: center; }
+        .count-switcher span { font-size: 9px; letter-spacing: 2px; opacity: .45; margin-right: 4px; }
+        .btn-count {
+            border: 1px solid var(--ink); padding: 4px 10px; font-size: 10px;
+            letter-spacing: 1px; background: transparent; cursor: pointer; font-family: inherit; transition: .18s;
+        }
+        .btn-count.active { background: var(--ink); color: var(--paper); }
+        .btn-back { font-size: 9px; letter-spacing: 2px; opacity: .5; background: none; border: none; cursor: pointer; font-family: inherit; text-transform: uppercase; }
+        .btn-back:hover { opacity: 1; }
+
+        .editor-body { display: flex; height: calc(100vh - 57px); overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px; min-width: 260px; flex-shrink: 0;
+            overflow-y: auto; border-right: 1px solid rgba(61,61,61,.1);
+            padding: 20px 16px; display: flex; flex-direction: column; gap: 14px;
+        }
+        .section-title {
+            font-size: 9px; font-weight: bold; border-bottom: 1px solid #d1ccbc;
+            margin-bottom: 10px; padding-bottom: 3px; letter-spacing: 2px; text-transform: uppercase;
+        }
+        .control-card { background: rgba(255,255,255,.4); border: 1px solid rgba(0,0,0,.08); padding: 14px; border-radius: 3px; }
+        .custom-slider {
+            -webkit-appearance: none; width: 100%; height: 1px;
+            background: #d1ccbc; outline: none; cursor: pointer; touch-action: none;
+        }
+        .custom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--ink); cursor: pointer; border-radius: 0; }
+        .custom-slider::-moz-range-thumb { width: 10px; height: 10px; background: var(--ink); cursor: pointer; border-radius: 0; border: none; }
+        .acc-row { display: grid; grid-template-columns: 105px 1fr; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .panel-tab-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+        .panel-tab {
+            border: 1px solid rgba(61,61,61,.3); padding: 3px 8px; font-size: 9px;
+            letter-spacing: 1px; cursor: pointer; background: transparent; font-family: inherit; transition: .15s; text-transform: uppercase;
+        }
+        .panel-tab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+        .upload-btn {
+            border: 1px solid rgba(61,61,61,.25); padding: 8px; text-align: center;
+            font-size: 9px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: .15s;
+        }
+        .upload-btn:hover { background: rgba(61,61,61,.06); }
+        .btn-ratio {
+            border: 1px solid var(--ink); padding: 3px 7px; font-size: 9px;
+            background: transparent; cursor: pointer; font-family: inherit; transition: .18s;
+        }
+        .btn-ratio.active { background: var(--ink); color: var(--paper); }
+        .ratio-row { display: flex; gap: 4px; flex-wrap: wrap; }
+
+        /* Canvas area */
+        .canvas-area {
+            flex: 1; overflow: auto; padding: 24px;
+            display: flex; align-items: flex-start; justify-content: center;
+        }
+        #mainCanvas {
+            display: block; max-width: 100%; height: auto;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+            background: white;
+        }
+
+        /* Export */
+        .export-btn {
+            width: 100%; background: var(--ink); color: var(--paper);
+            border: none; padding: 13px; font-size: 10px; font-weight: bold;
+            letter-spacing: .35em; text-transform: uppercase; cursor: pointer;
+            font-family: inherit; transition: .18s; border-radius: 2px;
+        }
+        .export-btn:hover { background: #000; }
+
+        /* Export Modal */
+        #exportModal {
+            position: fixed; inset: 0; z-index: 50; display: none;
+            align-items: center; justify-content: center; background: rgba(0,0,0,.75);
+        }
+        #exportModal.open { display: flex; }
+        .modal-inner {
+            position: relative; max-width: 480px; width: calc(100% - 32px);
+            background: var(--paper); border: 1px solid rgba(0,0,0,.15); border-radius: 4px; padding: 24px;
+        }
+        .modal-close-x { position: absolute; top: 10px; right: 14px; font-size: 18px; opacity: .4; cursor: pointer; background: none; border: none; font-family: monospace; }
+        .modal-close-x:hover { opacity: .8; }
+        #exportPreview { width: 100%; display: block; box-shadow: 0 8px 24px rgba(0,0,0,.1); border-radius: 2px; -webkit-touch-callout: default; }
+        #typewriterMsg { font-size: 9px; font-style: italic; opacity: 0; margin-top: 14px; text-align: center; min-height: 1.4em; transition: opacity .4s; }
+
+        @media (max-width: 768px) {
+            .editor-body { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid rgba(61,61,61,.1); max-height: 55vh; }
+            .canvas-area { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════ ENTRY SCREEN ══════════════ -->
+<div id="entryScreen">
+    <p class="text-[9px] tracking-[4px] uppercase opacity-30 mb-6 font-sans">Multi Studio</p>
+    <h1 class="entry-title">Wabi.ooo</h1>
+    <p class="entry-sub">How many collages would you like to make?</p>
+
+    <div class="count-grid">
+        <div class="count-card" onclick="startEditor(1)">
+            <div class="num">1</div>
+            <div class="dots"><div class="dot active"></div></div>
+            <div class="label">Single</div>
+        </div>
+        <div class="count-card" onclick="startEditor(2)">
+            <div class="num">2</div>
+            <div class="dots"><div class="dot active"></div><div class="dot active"></div></div>
+            <div class="label">Diptych</div>
+        </div>
+        <div class="count-card" onclick="startEditor(3)">
+            <div class="num">3</div>
+            <div class="dots"><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div></div>
+            <div class="label">Triptych</div>
+        </div>
+        <div class="count-card" onclick="startEditor(4)">
+            <div class="num">4</div>
+            <div class="dots"><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div></div>
+            <div class="label">Quartet</div>
+        </div>
+    </div>
+
+    <p class="text-[9px] opacity-20 mt-16 tracking-widest uppercase">You can always change the count inside the editor</p>
+</div>
+
+<!-- ══════════════ EDITOR SCREEN ══════════════ -->
+<div id="editorScreen">
+
+    <header class="editor-header">
+        <div style="display:flex; align-items:center; gap:18px;">
+            <button class="btn-back" onclick="goBack()">← Back</button>
+            <h1>Wabi.ooo</h1>
+        </div>
+        <div class="count-switcher">
+            <span># FRAMES</span>
+            <button class="btn-count" id="c1" onclick="changeCount(1)">1</button>
+            <button class="btn-count" id="c2" onclick="changeCount(2)">2</button>
+            <button class="btn-count" id="c3" onclick="changeCount(3)">3</button>
+            <button class="btn-count" id="c4" onclick="changeCount(4)">4</button>
+        </div>
+    </header>
+
+    <div class="editor-body">
+
+        <!-- ── Sidebar ── -->
+        <aside class="sidebar">
+
+            <!-- Active slot selector -->
+            <section class="control-card">
+                <div class="section-title">Active Frame</div>
+                <div class="panel-tab-bar" id="panelTabs"></div>
+                <p class="text-[8px] opacity-30 mt-1" id="slotLabel"></p>
+            </section>
+
+            <!-- Ratio -->
+            <section class="control-card">
+                <div class="section-title">Composition Ratio</div>
+                <div class="ratio-row">
+                    <button onclick="setRatio(1)"     id="ratio11"  class="btn-ratio active">1:1</button>
+                    <button onclick="setRatio(4/3)"   id="ratio43"  class="btn-ratio">4:3 L</button>
+                    <button onclick="setRatio(16/9)"  id="ratio169" class="btn-ratio">16:9 L</button>
+                    <button onclick="setRatio(3/4)"   id="ratio34"  class="btn-ratio">3:4 P</button>
+                    <button onclick="setRatio(9/16)"  id="ratio916" class="btn-ratio">9:16 P</button>
+                </div>
+            </section>
+
+            <!-- Image source -->
+            <section class="control-card">
+                <div class="section-title">01. Image Source</div>
+                <label class="cursor-pointer block">
+                    <div class="upload-btn" id="uploadBtnLabel">Upload</div>
+                    <input type="file" id="inputImg" class="hidden" accept="image/*">
+                </label>
+            </section>
+
+            <!-- Position & Zoom -->
+            <section class="control-card">
+                <div class="section-title">02. Position & Zoom</div>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2"><span class="text-[8px] w-8">ZOOM</span><input type="range" id="sliderZoom" class="custom-slider" min="0.1" max="4" step="0.01" value="1"></div>
+                    <div class="flex items-center gap-2"><span class="text-[8px] w-8">X</span><input type="range" id="sliderX" class="custom-slider" min="-100" max="100" value="0"></div>
+                    <div class="flex items-center gap-2"><span class="text-[8px] w-8">Y</span><input type="range" id="sliderY" class="custom-slider" min="-100" max="100" value="0"></div>
+                </div>
+            </section>
+
+            <!-- Aesthetics -->
+            <section class="control-card">
+                <div class="section-title">03. Aesthetics (Stamp & Noise)</div>
+                <div class="space-y-1">
+                    <div class="acc-row">
+                        <label class="flex items-center gap-2 text-[9px] cursor-pointer"><input type="checkbox" id="checkStars" class="accent-stone-800"> Scattered Stars</label>
+                        <div class="flex items-center gap-1"><span class="text-[8px] opacity-40">SIZE</span><input type="range" id="sizeStars" class="custom-slider" min="5" max="80" value="25"></div>
+                    </div>
+                    <div class="acc-row">
+                        <label class="flex items-center gap-2 text-[9px] cursor-pointer"><input type="checkbox" id="checkRain" class="accent-stone-800"> Raindrops</label>
+                        <div class="flex items-center gap-1"><span class="text-[8px] opacity-40">LEN</span><input type="range" id="sizeRain" class="custom-slider" min="5" max="150" value="40"></div>
+                    </div>
+                    <div class="acc-row">
+                        <label class="flex items-center gap-2 text-[9px] cursor-pointer"><input type="checkbox" id="checkDots" class="accent-stone-800"> Polka Dots</label>
+                        <div class="flex items-center gap-1"><span class="text-[8px] opacity-40">SIZE</span><input type="range" id="sizeDots" class="custom-slider" min="4" max="100" value="30"></div>
+                    </div>
+                    <div class="acc-row">
+                        <label class="flex items-center gap-2 text-[9px] cursor-pointer"><input type="checkbox" id="checkFlower" class="accent-stone-800"> Florals</label>
+                        <div class="flex items-center gap-1"><span class="text-[8px] opacity-40">SIZE</span><input type="range" id="sizeFlower" class="custom-slider" min="10" max="150" value="60"></div>
+                    </div>
+                    <div class="acc-row">
+                        <label class="flex items-center gap-2 text-[9px] cursor-pointer"><input type="checkbox" id="checkPoetry" class="accent-stone-800"> Poetic Text</label>
+                        <div class="flex items-center gap-1"><span class="text-[8px] opacity-40">FONT</span><input type="range" id="sizePoetry" class="custom-slider" min="8" max="40" value="14"></div>
+                    </div>
+                    <div class="acc-row">
+                        <label class="flex items-center gap-2 text-[9px] cursor-pointer"><input type="checkbox" id="checkCracks" class="accent-stone-800"> Wabi-Sabi Crack</label>
+                        <div class="flex items-center gap-1"><span class="text-[8px] opacity-40">THICK</span><input type="range" id="sizeCracks" class="custom-slider" min="0.1" max="3" step="0.1" value="0.5"></div>
+                    </div>
+                    <div class="acc-row">
+                        <label class="flex items-center gap-2 text-[9px] cursor-pointer"><input type="checkbox" id="checkMatrix" class="accent-stone-800"> Digital Matrix</label>
+                        <div class="flex items-center gap-1"><span class="text-[8px] opacity-40">DENSITY</span><input type="range" id="sizeMatrix" class="custom-slider" min="5" max="50" value="15"></div>
+                    </div>
+                </div>
+                <div class="mt-4 border-t border-stone-200 pt-3">
+                    <div class="flex justify-between text-[9px] mb-1 uppercase"><span>Film Grain</span><span id="valGrain">25%</span></div>
+                    <input type="range" id="grain" class="custom-slider" min="0" max="100" value="25">
+                </div>
+            </section>
+
+            <button class="export-btn" onclick="openExportModal()">Export Collage</button>
+
+        </aside>
+
+        <!-- ── Canvas area ── -->
+        <main class="canvas-area">
+            <canvas id="mainCanvas"></canvas>
+        </main>
+
+    </div>
+</div>
+
+<!-- ══════════════ EXPORT MODAL ══════════════ -->
+<div id="exportModal">
+    <div class="modal-inner">
+        <button class="modal-close-x" onclick="closeExportModal()">✕</button>
+        <p class="text-[9px] uppercase tracking-[3px] opacity-40 mb-3">Your Collage</p>
+        <img id="exportPreview" src="" alt="collage preview">
+        <div class="mt-4 flex gap-3">
+            <a id="modalDownload" download="" href=""
+               class="flex-1 text-center bg-stone-800 text-stone-100 py-3 text-[10px] font-bold tracking-[.3em] uppercase hover:bg-black transition-all rounded" style="font-family:inherit;">
+                Download
+            </a>
+            <button onclick="closeExportModal()"
+                class="flex-1 text-center border border-stone-400 py-3 text-[10px] tracking-[.3em] uppercase hover:bg-stone-100 transition-all rounded" style="font-family:inherit;">
+                Close
+            </button>
+        </div>
+        <p id="typewriterMsg"></p>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+    const userPalette = [
+        '#bae3ff','#C9AFC2','#ffffc4','#dde5b4','#adc178',
+        '#f0ead2','#F8EC9F','#8AB0DD','#B7B684','#611321',
+        '#1AA2F9','#FE6154','#F5EB9E','#FEFBB6','#b5ea8c',
+        '#c7e0a8','#cfdde6','#e7cba9','#d1ccbc','#f7eea9','#3d3d3d',
+        '#000000','#FFFFFF','#F7EEA9'
+    ];
+
+    const ratioIdMap = {
+        '1':'ratio11','1.3333333333333333':'ratio43',
+        '1.7777777777777777':'ratio169','0.75':'ratio34','0.5625':'ratio916'
+    };
+
+    // slot labels per count
+    const slotLabels = {
+        1: ['Full Frame'],
+        2: ['Top — Color', 'Bottom — B/W'],
+        3: ['Top — Color', 'Bottom Left — B/W', 'Bottom Right — B/W'],
+        4: ['Top Left — Color', 'Top Right — B/W', 'Bottom Left — B/W', 'Bottom Right — B/W']
+    };
+
+    // ── State ──────────────────────────────────────────────────────────
+    let numPics    = 1;
+    let activeSlot = 0;
+
+    // 4 slots always kept so state is preserved when switching count
+    const imgs  = [null, null, null, null];
+    const calib = [
+        { zoom:1, x:0, y:0 }, { zoom:1, x:0, y:0 },
+        { zoom:1, x:0, y:0 }, { zoom:1, x:0, y:0 }
+    ];
+    const sharedState = {
+        ratio: 1, noise: 25,
+        acc: {
+            stars:  { enabled:false, size:25 },
+            dots:   { enabled:false, size:30 },
+            flower: { enabled:false, size:60 },
+            rain:   { enabled:false, size:40 },
+            poetry: { enabled:false, size:14 },
+            cracks: { enabled:false, size:0.5 },
+            matrix: { enabled:false, size:15 }
+        }
+    };
+
+    // ── Entry → Editor ─────────────────────────────────────────────────
+    function startEditor(count) {
+        numPics    = count;
+        activeSlot = 0;
+        document.getElementById('entryScreen').style.display = 'none';
+        document.getElementById('editorScreen').style.display = 'block';
+        buildTabs();
+        updateCountButtons();
+        loadSliderValues();
+        setRatio(1);
+    }
+
+    function goBack() {
+        document.getElementById('editorScreen').style.display = 'none';
+        document.getElementById('entryScreen').style.display  = 'flex';
+    }
+
+    // ── Change count ───────────────────────────────────────────────────
+    function changeCount(n) {
+        numPics = n;
+        if (activeSlot >= n) activeSlot = n - 1;
+        buildTabs();
+        updateCountButtons();
+        loadSliderValues();
+        render();
+    }
+
+    function updateCountButtons() {
+        [1,2,3,4].forEach(n => document.getElementById('c'+n).classList.toggle('active', n === numPics));
+    }
+
+    // ── Panel tabs ─────────────────────────────────────────────────────
+    function buildTabs() {
+        const bar = document.getElementById('panelTabs');
+        bar.innerHTML = '';
+        const names = ['A','B','C','D'];
+        for (let i = 0; i < numPics; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'panel-tab' + (i === activeSlot ? ' active' : '');
+            btn.textContent = 'Frame ' + names[i];
+            btn.onclick = () => selectSlot(i);
+            bar.appendChild(btn);
+        }
+        updateSlotLabel();
+    }
+
+    function selectSlot(idx) {
+        activeSlot = idx;
+        document.querySelectorAll('.panel-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+        loadSliderValues();
+        updateSlotLabel();
+    }
+
+    function updateSlotLabel() {
+        document.getElementById('slotLabel').textContent = slotLabels[numPics][activeSlot];
+    }
+
+    // ── Sync sidebar sliders from active slot ──────────────────────────
+    function loadSliderValues() {
+        const c = calib[activeSlot];
+        document.getElementById('sliderZoom').value = c.zoom;
+        document.getElementById('sliderX').value    = c.x;
+        document.getElementById('sliderY').value    = c.y;
+    }
+
+    // ── Ratio ──────────────────────────────────────────────────────────
+    function setRatio(r) {
+        sharedState.ratio = r;
+        document.querySelectorAll('.btn-ratio').forEach(b => b.classList.remove('active'));
+        const id = ratioIdMap[r.toString()];
+        if (id) document.getElementById(id).classList.add('active');
+        render();
+    }
+
+    // ── Layout regions ─────────────────────────────────────────────────
+    function getRegions(W, H) {
+        if (numPics === 1) return [{ x:0,   y:0,   w:W,   h:H   }];
+        if (numPics === 2) return [
+            { x:0,   y:0,   w:W,   h:H/2 },
+            { x:0,   y:H/2, w:W,   h:H/2 }
+        ];
+        if (numPics === 3) return [
+            { x:0,   y:0,   w:W,   h:H/2 },
+            { x:0,   y:H/2, w:W/2, h:H/2 },
+            { x:W/2, y:H/2, w:W/2, h:H/2 }
+        ];
+        return [
+            { x:0,   y:0,   w:W/2, h:H/2 },
+            { x:W/2, y:0,   w:W/2, h:H/2 },
+            { x:0,   y:H/2, w:W/2, h:H/2 },
+            { x:W/2, y:H/2, w:W/2, h:H/2 }
+        ];
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────
+    function render() {
+        const W = 1600, H = Math.round(W / sharedState.ratio);
+        canvas.width = W; canvas.height = H;
+        ctx.fillStyle = '#F4F1EA';
+        ctx.fillRect(0, 0, W, H);
+
+        const regions = getRegions(W, H);
+
+        for (let i = 0; i < numPics; i++) {
+            const r = regions[i];
+            if (imgs[i]) {
+                drawLayer(imgs[i], r.x, r.y, r.w, r.h, calib[i], i > 0);
+            } else {
+                drawGhost(r.x + r.w/2, r.y + r.h/2, slotLabels[numPics][i]);
+            }
+        }
+
+        // Separator lines
+        if (numPics > 1) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(61,61,61,0.1)';
+            ctx.lineWidth = 2;
+            if (numPics === 2) {
+                line(0, H/2, W, H/2);
+            } else if (numPics === 3) {
+                line(0, H/2, W, H/2);
+                line(W/2, H/2, W/2, H);
+            } else {
+                line(0, H/2, W, H/2);
+                line(W/2, 0, W/2, H);
+            }
+            ctx.restore();
+        }
+
+        const acc = sharedState.acc;
+        if (acc.cracks.enabled)  drawCracks(acc.cracks.size);
+        if (acc.rain.enabled)    drawRain(acc.rain.size);
+        if (acc.matrix.enabled)  drawMatrix(acc.matrix.size);
+        if (acc.dots.enabled)    drawRefinedDots(acc.dots.size);
+        if (acc.flower.enabled)  drawStampFlower(acc.flower.size);
+        if (acc.poetry.enabled)  drawPoetry(acc.poetry.size);
+        if (acc.stars.enabled)   drawRefinedStars(acc.stars.size);
+
+        if (sharedState.noise > 0) applyNoise();
+    }
+
+    function line(x1, y1, x2, y2) {
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+
+    function drawGhost(cx, cy, label) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(61,61,61,0.12)';
+        ctx.font = "22px 'Special Elite'";
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, cx, cy);
+        ctx.restore();
+    }
+
+    function drawLayer(img, dx, dy, dw, dh, cfg, isGray) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip();
+        const imgR = img.width / img.height, areaR = dw / dh;
+        let dW, dH;
+        if (imgR > areaR) { dH = dh; dW = dh * imgR; }
+        else               { dW = dw; dH = dw / imgR; }
+        dW *= cfg.zoom; dH *= cfg.zoom;
+        const x = dx + (dw - dW)/2 + cfg.x/100 * dw;
+        const y = dy + (dh - dH)/2 + cfg.y/100 * dh;
+        ctx.drawImage(img, x, y, dW, dH);
+        if (isGray) {
+            const data = ctx.getImageData(dx, dy, dw, dh);
+            for (let i = 0; i < data.data.length; i += 4) {
+                const v = data.data[i]*0.3 + data.data[i+1]*0.59 + data.data[i+2]*0.11;
+                data.data[i] = data.data[i+1] = data.data[i+2] = v;
+            }
+            ctx.putImageData(data, dx, dy);
+        }
+        ctx.restore();
+    }
+
+    function applyNoise() {
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const f = sharedState.noise / 100;
+        for (let i = 0; i < data.data.length; i += 4) {
+            const n = (Math.random()-0.5)*130*f;
+            data.data[i]+=n; data.data[i+1]+=n; data.data[i+2]+=n;
+        }
+        ctx.putImageData(data, 0, 0);
+    }
+
+    // ── Events ─────────────────────────────────────────────────────────
+    window.onload = () => {
+        document.getElementById('inputImg').onchange = async e => {
+            const file = e.target.files[0]; if (!file) return;
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            await new Promise(r => img.onload = r);
+            imgs[activeSlot] = img;
+            render();
+            e.target.value = '';
+        };
+
+        document.getElementById('sliderZoom').oninput = e => { calib[activeSlot].zoom = +e.target.value; render(); };
+        document.getElementById('sliderX').oninput    = e => { calib[activeSlot].x    = +e.target.value; render(); };
+        document.getElementById('sliderY').oninput    = e => { calib[activeSlot].y    = +e.target.value; render(); };
+
+        document.getElementById('grain').oninput = e => {
+            sharedState.noise = +e.target.value;
+            document.getElementById('valGrain').textContent = sharedState.noise + '%';
+            render();
+        };
+
+        ['Stars','Dots','Flower','Rain','Poetry','Cracks','Matrix'].forEach(k => {
+            const lk = k.toLowerCase();
+            document.getElementById('check'+k).onchange = e => { sharedState.acc[lk].enabled = e.target.checked; render(); };
+            document.getElementById('size'+k).oninput   = e => { sharedState.acc[lk].size = +e.target.value; render(); };
+        });
+
+        setupTouchSliders();
+    };
+
+    // ── Touch sliders ───────────────────────────────────────────────────
+    function setupTouchSliders() {
+        document.querySelectorAll('.custom-slider').forEach(slider => {
+            slider.addEventListener('touchstart', onTouchSlider, { passive:false });
+            slider.addEventListener('touchmove',  onTouchSlider, { passive:false });
+        });
+    }
+
+    function onTouchSlider(e) {
+        e.preventDefault();
+        const touch = e.touches[0], sl = e.currentTarget;
+        const rect = sl.getBoundingClientRect();
+        const min = parseFloat(sl.min)||0, max = parseFloat(sl.max)||100, step = parseFloat(sl.step)||1;
+        let ratio = (touch.clientX - rect.left) / rect.width;
+        ratio = Math.max(0, Math.min(1, ratio));
+        let val = Math.round((min + ratio*(max-min)) / step) * step;
+        val = Math.max(min, Math.min(max, val));
+        sl.value = val;
+        sl.dispatchEvent(new Event('input', { bubbles:true }));
+    }
+
+    // ── Drawing helpers ─────────────────────────────────────────────────
+    function drawStampFlower(size) {
+        for (let i=0; i<8; i++) {
+            const x=Math.random()*canvas.width, y=Math.random()*canvas.height, s=size;
+            const color=userPalette[Math.floor(Math.random()*userPalette.length)];
+            ctx.save(); ctx.translate(x,y); ctx.rotate(Math.random()*Math.PI*2); ctx.globalAlpha=0.85;
+            for (let j=0; j<5; j++) {
+                ctx.rotate(Math.PI*2/5);
+                ctx.beginPath(); ctx.moveTo(0,0);
+                ctx.bezierCurveTo(s/3,s/10,s/2,s/2,0,s);
+                ctx.bezierCurveTo(-s/2,s/2,-s/3,s/10,0,0);
+                ctx.save(); ctx.clip();
+                ctx.fillStyle=color; ctx.fill();
+                ctx.fillStyle="rgba(0,0,0,0.15)";
+                for (let px=-s; px<s; px+=4) for (let py=0; py<s; py+=4)
+                    if (Math.random()>0.4) { ctx.beginPath(); ctx.arc(px,py,1.2,0,Math.PI*2); ctx.fill(); }
+                ctx.strokeStyle="rgba(255,255,255,0.2)"; ctx.lineWidth=1; ctx.beginPath();
+                for (let l=0; l<s; l+=8) { ctx.moveTo(-s,l); ctx.lineTo(s,l-s/4); }
+                ctx.stroke(); ctx.restore();
+                ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([2,1]); ctx.stroke();
+            }
+            ctx.fillStyle="#F8EC9F"; ctx.beginPath(); ctx.arc(0,0,s/8,0,Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+        ctx.setLineDash([]); ctx.globalAlpha=1;
+    }
+
+    function drawRefinedDots(size) {
+        for (let i=0; i<30; i++) {
+            const x=Math.random()*canvas.width, y=Math.random()*canvas.height, s=size*(0.4+Math.random()*0.8);
+            const r=Math.random();
+            if(r<0.45) ctx.fillStyle="#F7EEA9";
+            else if(r<0.55) ctx.fillStyle="#000";
+            else if(r<0.65) ctx.fillStyle="#FFF";
+            else ctx.fillStyle=userPalette[Math.floor(Math.random()*userPalette.length)];
+            ctx.globalAlpha=0.6+Math.random()*0.3;
+            ctx.beginPath(); ctx.arc(x,y,s/2,0,Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha=1;
+    }
+
+    function drawRefinedStars(size) {
+        for (let i=0; i<18; i++) {
+            const x=Math.random()*canvas.width, y=Math.random()*canvas.height, s=size;
+            ctx.fillStyle=userPalette[Math.floor(Math.random()*userPalette.length)];
+            ctx.beginPath();
+            for (let j=0;j<5;j++) {
+                ctx.lineTo(x+s*Math.cos((18+j*72)*Math.PI/180), y-s*Math.sin((18+j*72)*Math.PI/180));
+                ctx.lineTo(x+s/2*Math.cos((54+j*72)*Math.PI/180), y-s/2*Math.sin((54+j*72)*Math.PI/180));
+            }
+            ctx.closePath(); ctx.fill();
+        }
+    }
+
+    function drawRain(length) {
+        ctx.strokeStyle="rgba(186,227,255,0.35)"; ctx.lineWidth=1.2;
+        for (let i=0; i<120; i++) {
+            const x=Math.random()*canvas.width, y=Math.random()*canvas.height, l=length*(Math.random()+0.5);
+            ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+l); ctx.stroke();
+        }
+    }
+
+    function drawMatrix(step) {
+        ctx.fillStyle="rgba(138,176,221,0.4)"; ctx.font=`${step}px monospace`;
+        const chars="0123456789abcdefghijklmnopqrstuvwxyz".split("");
+        for (let x=0; x<canvas.width; x+=step*1.5)
+            for (let y=0; y<canvas.height; y+=step*1.5)
+                if (Math.random()>0.85) {
+                    ctx.globalAlpha=0.2+Math.random()*0.4;
+                    ctx.fillText(chars[Math.floor(Math.random()*chars.length)],x,y);
+                }
+        ctx.globalAlpha=1;
+    }
+
+    function drawPoetry(fontSize) {
+        ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.font=`${fontSize}px 'Special Elite'`;
+        const words=["imperfection","echo","wabi-sabi","stillness","collage"];
+        for (let i=0;i<20;i++) ctx.fillText(words[Math.floor(Math.random()*5)],Math.random()*canvas.width,Math.random()*canvas.height);
+    }
+
+    function drawCracks(thick) {
+        ctx.strokeStyle="rgba(0,0,0,0.06)"; ctx.lineWidth=thick;
+        for (let i=0; i<5; i++) {
+            let x=Math.random()*canvas.width, y=0;
+            ctx.beginPath(); ctx.moveTo(x,y);
+            for (let j=0; j<12; j++) { x+=(Math.random()-0.5)*150; y+=canvas.height/12; ctx.lineTo(x,y); }
+            ctx.stroke();
+        }
+    }
+
+    // ── Export Modal ────────────────────────────────────────────────────
+    let twTimer = null;
+
+    function openExportModal() {
+        const dataURL  = canvas.toDataURL('image/png');
+        const filename = `Wabi-Sabi-${Date.now()}.png`;
+        document.getElementById('exportPreview').src       = dataURL;
+        document.getElementById('modalDownload').href      = dataURL;
+        document.getElementById('modalDownload').download  = filename;
+        const msg = document.getElementById('typewriterMsg');
+        msg.textContent = ''; msg.style.opacity = '0';
+        clearTimeout(twTimer);
+        document.getElementById('exportModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        twTimer = setTimeout(() => typewrite("Your collage is ready. Long-press the preview on mobile to save to your photos."), 150);
+    }
+
+    function closeExportModal() {
+        document.getElementById('exportModal').classList.remove('open');
+        document.body.style.overflow = '';
+        clearTimeout(twTimer);
+    }
+
+    function typewrite(text) {
+        const el = document.getElementById('typewriterMsg');
+        el.textContent = ''; el.style.opacity = '1';
+        let i = 0;
+        function tick() { el.textContent += text[i]; i++; if (i < text.length) twTimer = setTimeout(tick, 38); }
+        tick();
+    }
+
+    document.getElementById('exportModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('exportModal')) closeExportModal();
+    });
+</script>
+</body>
+</html>
